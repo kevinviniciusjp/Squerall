@@ -12,7 +12,7 @@ RUN set -x && \
 # Update environment
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64/
 ENV HADOOP_VERSION 2.9.2
-ENV HADOOP_URL http://mirror.synyx.de/apache/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz
+ENV HADOOP_URL https://archive.apache.org/dist/hadoop/core/hadoop-2.9.2/hadoop-2.9.2.tar.gz
 
 # Configure SSH
 # COPY ssh_config /root/.ssh/config
@@ -27,7 +27,7 @@ ENV HDFS_PORT 9000
 
 RUN set -x && \
     curl -fSL -o - "$HADOOP_URL" | tar xz -C /usr/local && \
-    mv /usr/local/hadoop-$HADOOP_VERSION /usr/local/hadoop
+    mv /usr/local/hadoop-2.9.2 /usr/local/hadoop
 
 # Configure Hadoop
 RUN sed -i 's@\${JAVA_HOME}@'"$JAVA_HOME"'@g' $HADOOP_CONF_DIR/hadoop-env.sh
@@ -36,22 +36,22 @@ RUN sed -ri ':a;N;$!ba;s@(<configuration>).*(</configuration>)@\1<property><name
 
 # Install Hive
 ENV HIVE_VERSION 3.1.1
-ENV HIVE_URL https://www-eu.apache.org/dist/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz
+ENV HIVE_URL https://archive.apache.org/dist/hive/hive-3.1.1/apache-hive-3.1.1-bin.tar.gz
 ENV HIVE_HOME /usr/local/hive
 
 RUN set -x && \
     curl -fSL -o - "$HIVE_URL" | tar xz -C /usr/local && \
     mv /usr/local/apache-hive-$HIVE_VERSION-bin /usr/local/hive
 
-RUN wget http://central.maven.org/maven2/mysql/mysql-connector-java/8.0.13/mysql-connector-java-8.0.13.jar && \
+RUN wget https://repo.maven.apache.org/maven2/mysql/mysql-connector-java/8.0.13/mysql-connector-java-8.0.13.jar && \
     mv mysql-connector-java-8.0.13.jar /usr/local/hive/lib
 
 COPY evaluation/Hive_files/hive-site.xml $HIVE_HOME/conf/
 
 # Install Presto (Server and CLI)
 ENV PRESTO_VERSION 304
-ENV PRESTO_URL     http://central.maven.org/maven2/io/prestosql/presto-server/${PRESTO_VERSION}/presto-server-${PRESTO_VERSION}.tar.gz
-ENV PRESTO_CLI_URL http://central.maven.org/maven2/io/prestosql/presto-cli/${PRESTO_VERSION}/presto-cli-${PRESTO_VERSION}-executable.jar
+ENV PRESTO_URL     https://repo.maven.apache.org/maven2/io/prestosql/presto-server/304/presto-server-304.tar.gz
+ENV PRESTO_CLI_URL https://repo.maven.apache.org/maven2/io/prestosql/presto-cli/304/presto-cli-304-executable.jar
 
 RUN set -x && \
     curl -fSL -o - "$PRESTO_URL" | tar xz -C /usr/local && \
@@ -76,19 +76,16 @@ COPY evaluation/Presto_files/catalog/* /usr/local/presto/etc/catalog/
 
 # Install MongoDB
 RUN set -x && \
-    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 2930ADAE8CAF5059EE73BB4B58712A2291FA4AD5 && \
-    echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.6 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-3.6.list && \
+    wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | apt-key add - && \
+    echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/4.4 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-4.4.list && \
     apt-get update && \
     apt-get install -y mongodb-org && \
     mkdir -p /data/db
 
 # Install Cassandra
-RUN set -x && \
-    echo "deb http://www.apache.org/dist/cassandra/debian 311x main" | tee -a /etc/apt/sources.list.d/cassandra.sources.list && \
-    curl https://www.apache.org/dist/cassandra/KEYS | apt-key add - && \
-    apt-get update && \
-    apt-key adv --keyserver pool.sks-keyservers.net --recv-key A278B781FE4B2BDA && \
-    apt-get -y install cassandra
+RUN wget https://archive.apache.org/dist/cassandra/debian/pool/main/c/cassandra/cassandra_3.11.13_all.deb -o - && \ 
+    dpkg -i cassandra_3.11.13_all.deb && \ 
+    apt-get update
 
 # Install MySQL
 RUN set -x && \
@@ -128,12 +125,12 @@ RUN set -x && \
 ENV JENA_VERSION 3.9.0
 
 RUN set -x && \
-    wget http://central.maven.org/maven2/org/apache/jena/jena-arq/${JENA_VERSION}/jena-arq-${JENA_VERSION}.jar && \
-    mv jena-arq-${JENA_VERSION}.jar /root
+    wget https://repo.maven.apache.org/maven2/org/apache/jena/jena-arq/3.9.0/jena-arq-3.9.0.jar && \
+    mv jena-arq-3.9.0.jar /root
 
 RUN set -x && \
-    wget http://central.maven.org/maven2/io/prestosql/presto-jdbc/${PRESTO_VERSION}/presto-jdbc-${PRESTO_VERSION}.jar && \
-    mv presto-jdbc-${PRESTO_VERSION}.jar /root
+    wget https://repo.maven.apache.org/maven2/io/prestosql/presto-jdbc/304/presto-jdbc-304.jar && \
+    mv presto-jdbc-304.jar /root
 
 COPY evaluation/SQLtoNOSQL /root/SQLtoNOSQL
 COPY evaluation/input_files/* /root/input/
